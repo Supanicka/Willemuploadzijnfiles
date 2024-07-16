@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload and Download Files to/from Discord</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            color: #555;
+        }
+        #uploadForm, #downloadForm {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Files to Discord</h1>
+    <div id="uploadForm">
+        <input type="file" id="fileInput" multiple>
+        <button type="button" onclick="uploadFiles()">Upload</button>
+    </div>
+
+    <h1>Download Files from Discord</h1>
+    <div id="downloadForm">
+        <textarea id="encodedData" rows="10" placeholder="Paste encoded data here"></textarea>
+        <button type="button" onclick="decodeFile()">Download File</button>
+    </div>
+    <div id="output"></div>
+
+    <script>
+        // Function to convert ArrayBuffer to Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // Function to upload files
+        async function uploadFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            if (files.length === 0) {
+                alert('Please select a file.');
+                return;
+            }
+
+            const webhookURL = 'https://discord.com/api/webhooks/1262847509504589915/qUZms1nd2LeHSBezzkiXI1KnFk64IZpw7kAzk1K0vYGRb90i1aY5jGBLznJC9uifrUJI';
+
+            for (const file of files) {
+                try {
+                    const fileBuffer = await file.arrayBuffer();
+                    const encodedFile = arrayBufferToBase64(fileBuffer);
+
+                    const payload = {
+                        content: `**File Name**: ${file.name}\n\`\`\`base64\n${encodedFile}\n\`\`\``
+                    };
+
+                    const response = await fetch(webhookURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+
+                    const result = await response.json();
+                    console.log('Success:', result);
+                    alert('File uploaded successfully');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('File upload failed');
+                }
+            }
+        }
+
+        // Function to convert Base64 to ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Function to decode and download the file
+        function decodeFile() {
+            const encodedData = document.getElementById('encodedData').value;
+            const base64Pattern = /```base64\n([\s\S]*?)\n```/;
+            const match = encodedData.match(base64Pattern);
+
+            if (!match || match.length < 2) {
+                alert('Invalid encoded data.');
+                return;
+            }
+
+            const base64Data = match[1];
+            const arrayBuffer = base64ToArrayBuffer(base64Data);
+
+            const blob = new Blob([arrayBuffer]);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'downloaded_file';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
