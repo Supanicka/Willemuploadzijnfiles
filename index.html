@@ -3,18 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Files to Discord</title>
+    <title>Upload and Download Files to/from Discord</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            color: #555;
+        }
+        #uploadForm, #downloadForm {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Upload Files to Discord</h1>
-    <form id="uploadForm">
+    <div id="uploadForm">
         <input type="file" id="fileInput" multiple>
         <button type="button" onclick="uploadFiles()">Upload</button>
-    </form>
+    </div>
 
     <h1>Download Files from Discord</h1>
-    <textarea id="encodedData" rows="10" cols="50" placeholder="Paste encoded data here"></textarea>
-    <button type="button" onclick="decodeFile()">Download File</button>
+    <div id="downloadForm">
+        <textarea id="encodedData" rows="10" placeholder="Paste encoded data here"></textarea>
+        <button type="button" onclick="decodeFile()">Download File</button>
+    </div>
     <div id="output"></div>
 
     <script>
