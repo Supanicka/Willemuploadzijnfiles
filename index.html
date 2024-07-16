@@ -42,14 +42,6 @@
             };
         }
 
-        // Function to convert ArrayBuffer to Base64
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            bytes.forEach(byte => binary += String.fromCharCode(byte));
-            return window.btoa(binary);
-        }
-
         async function uploadFiles() {
             const fileInput = document.getElementById('fileInput');
             const files = fileInput.files;
@@ -67,16 +59,11 @@
             for (const file of files) {
                 try {
                     const encryptedFile = await encryptFile(file, key);
-                    const encryptedFileBase64 = arrayBufferToBase64(new Uint8Array(encryptedFile.data));
-
                     const payload = {
-                        content: "Encrypted file upload",
+                        content: `**Encrypted file upload**\n**File Name**: ${file.name}\n**Encryption Key**: \`\`\`json\n${keyString}\n\`\`\``,
                         embeds: [{
-                            title: "Encrypted File",
-                            description: `\`\`\`json\n${JSON.stringify(encryptedFile, null, 2)}\n\`\`\``,
-                            footer: {
-                                text: `Key: \`\`\`json\n${keyString}\n\`\`\``
-                            }
+                            title: "Encrypted File Data",
+                            description: `\`\`\`json\n${JSON.stringify(encryptedFile, null, 2)}\n\`\`\``
                         }]
                     };
 
@@ -92,8 +79,7 @@
                         throw new Error('Network response was not ok ' + response.statusText);
                     }
 
-                    const result = await response.json();
-                    console.log('Success:', result);
+                    console.log('Success:', await response.json());
                     alert('File uploaded successfully');
                 } catch (error) {
                     console.error('Error:', error);
@@ -104,3 +90,4 @@
     </script>
 </body>
 </html>
+
