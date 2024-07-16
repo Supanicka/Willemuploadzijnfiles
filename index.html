@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Encrypted Files to Discord</title>
+</head>
+<body>
+    <h1>Upload Encrypted Files to Discord</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" multiple>
+        <button type="button" onclick="uploadFiles()">Upload</button>
+    </form>
+
+    <script>
+        // Function to generate a random AES key
+        async function generateKey() {
+            return crypto.subtle.generateKey(
+                {
+                    name: "AES-GCM",
+                    length: 256,
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        // Function to encrypt the file
+        async function encryptFile(file, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const algorithm = {
+                name: "AES-GCM",
+                iv: iv,
+            };
+
+            const fileBuffer = await file.arrayBuffer();
+            const encryptedData = await crypto.subtle.encrypt(algorithm, key, fileBuffer);
+
+            return {
+                iv: Array.from(new Uint8Array(iv)),
+                data: Array.from(new Uint8Array(encryptedData)),
+            };
+        }
+
+        // Function to convert ArrayBuffer to Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            bytes.forEach(byte => binary += String.fromCharCode(byte));
+            return window.btoa(binary);
+        }
+
+        async function uploadFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            if (files.length === 0) {
+                alert('Please select a file.');
+                return;
+            }
+
+            const webhookURL = 'https://discord.com/api/webhooks/1262847509504589915/qUZms1nd2LeHSBezzkiXI1KnFk64IZpw7kAzk1K0vYGRb90i1aY5jGBLznJC9uifrUJI';
+
+            const key = await generateKey();
+            const exportedKey = await crypto.subtle.exportKey('jwk', key);
+            const keyString = JSON.stringify(exportedKey);
+
+            for (const file of files) {
+                try {
+                    const encryptedFile = await encryptFile(file, key);
+                    const encryptedFileBase64 = arrayBufferToBase64(new Uint8Array(encryptedFile.data));
+
+                    const payload = {
+                        content: "Encrypted file upload",
+                        embeds: [{
+                            title: "Encrypted File",
+                            description: `\`\`\`json\n${JSON.stringify(encryptedFile, null, 2)}\n\`\`\``,
+                            footer: {
+                                text: `Key: \`\`\`json\n${keyString}\n\`\`\``
+                            }
+                        }]
+                    };
+
+                    const response = await fetch(webhookURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+
+                    const result = await response.json();
+                    console.log('Success:', result);
+                    alert('File uploaded successfully');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('File upload failed');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
